@@ -1,0 +1,33 @@
+trigger TaskTrigger on Task (after update) {
+    public void activateAccount(List<Task> completedTasks) {
+        Set<Id> accountIds = new Set<Id>();
+        
+        for (Task task : completedTasks) {
+            if (task.Status == 'Completed' && task.WhatId != null && task.WhatId.getSObjectType() == Account.sObjectType) {
+                accountIds.add(task.WhatId);
+            }
+        }
+        
+        if (!accountIds.isEmpty()) {
+            List<Account> accountsToUpdate = [SELECT Id FROM Account WHERE Id IN :accountIds AND Active__c = false];
+            
+            for (Account acc : accountsToUpdate) {
+                acc.Active__c = true;
+            }
+            
+            update accountsToUpdate;
+        }
+    }
+    
+    List<Task> completedTasks = new List<Task>();
+    
+    for (Task t : Trigger.new) {
+        if (t.Status == 'Completed' && Trigger.oldMap.get(t.Id).Status != 'Completed') {
+            completedTasks.add(t);
+        }
+    }
+    
+    if (!completedTasks.isEmpty()) {
+        activateAccount(completedTasks);
+    }
+}
