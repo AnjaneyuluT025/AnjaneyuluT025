@@ -1,0 +1,28 @@
+trigger AccountTrigger on Account (after insert, after update) {
+    List<Task> taskList = new List<Task>();
+    List<Account> activateAccountList = new List<Account>();
+    
+    for (Account acc : Trigger.new) {
+        if (acc.Active__c && !Trigger.oldMap.get(acc.Id).Active__c) {
+            Task newTask = new Task();
+            newTask.Subject = 'Review Account - ' + acc.AccountNumber;
+            newTask.ActivityDate = System.today().addDays(7);
+            newTask.OwnerId = acc.OwnerId;
+            newTask.Status = 'Not Started';
+            newTask.WhatId = acc.Id;
+            
+            taskList.add(newTask);
+            activateAccountList.add(acc);
+        }
+    }
+    
+    insert taskList;
+    
+    if (!activateAccountList.isEmpty()) {
+        for (Account acc : activateAccountList) {
+            acc.Active__c = true;
+        }
+        
+        update activateAccountList;
+    }
+}
