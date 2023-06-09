@@ -1,0 +1,19 @@
+ List<Account> accountsToUpdate = new List<Account>();
+    
+    for (Task task : Trigger.new) {
+        if (task.Status == 'Completed' && task.Subject.startsWith('Review Account-')) {
+            // Find the corresponding account
+            Id accountId = task.WhatId;
+            Account acc = [SELECT Id, Active__c, Description FROM Account WHERE Id = :accountId LIMIT 1];
+            
+            // Update account fields
+            acc.Active__c = true;
+            acc.Description = task.Description;
+            
+            accountsToUpdate.add(acc);
+        }
+    }
+    
+    update accountsToUpdate;
+
+}
